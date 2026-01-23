@@ -1,5 +1,7 @@
 :root {
   --bg: #0b0d11;
+  --bgGradientColor1: #111828;
+  --bgGradientColor2: #0d182a;
   --panel: #141824;
   --text: #e9ecf1;
   --muted: #9aa0b5;
@@ -8,6 +10,7 @@
   --primary-strong: #2a88d6;
   --border: #1f2433;
   --border-light: #2a2f40;
+  --input-background: #0f1220;
 }
 
 * {
@@ -17,9 +20,9 @@
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  background: radial-gradient(circle at 20% 20%, #111828 0, #0b0d11 40%),
-    radial-gradient(circle at 80% 0%, #0d182a 0, #0b0d11 35%),
-    linear-gradient(120deg, #0b0d11 0%, #0b0d11 100%);
+  background: radial-gradient(circle at 20% 20%, var(--bgGradientColor1) 0, var(--bg) 40%),
+    radial-gradient(circle at 80% 0%, var(--bgGradientColor2) 0, var(--bg) 35%),
+    linear-gradient(120deg, var(--bg) 0%, var(--bg) 100%);
   color: var(--text);
   min-height: 100vh;
 }
@@ -104,7 +107,7 @@ input[type="range"] {
 }
 
 input[type="number"] {
-  background: #0f1220;
+  background: var(--input-background);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
@@ -137,7 +140,7 @@ input[type="range"] {
 
 .btn.primary {
   background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-  color: #0b0d11;
+  color: var(--text);
   box-shadow: 0 8px 24px rgba(62, 166, 255, 0.25);
 }
 
@@ -232,7 +235,7 @@ transform:rotate(180deg)
 }
 
 .word-middle {
-  color: #e53935;
+  color: var(--accent);
   /* font-weight: 700; */
   text-align: center;
   text-decoration:solid
