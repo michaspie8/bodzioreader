@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import ePub from "epubjs";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const defaultWpm = 400;
 
@@ -16,10 +14,12 @@ function splitWords(text) {
     .filter(Boolean);
 }
 
+//
 function cleanText(text) {
   return text.normalize("NFKC");
 }
 
+//returns jsx of a word with highilighted middle letter
 function highlightWord(word) {
   if (!word) return null;
   const wordWithoutPunctuationAtEnd = word.replace(/[.,!?;:]+$/g, "");
@@ -34,17 +34,23 @@ function highlightWord(word) {
         <div>^</div>
         {middle}
         <div>^</div>
-        </span>
+      </span>
       <span>{right}</span>
     </div>
   );
 }
 
+//check file extension or mime type
 function isEpub(file) {
-  return file?.type === "application/epub+zip" || file?.name?.toLowerCase().endsWith(".epub");
+  return (
+    file?.type === "application/epub+zip" ||
+    file?.name?.toLowerCase().endsWith(".epub")
+  );
 }
 
+
 async function extractPdfPages(buffer) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
   const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
   const collected = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -53,7 +59,7 @@ async function extractPdfPages(buffer) {
     const pageText = textContent.items.map((item) => item.str).join(" ");
     collected.push(splitWords(cleanText(pageText)));
   }
-  return { pages: collected, pageCount: pdf.numPages };
+  return { pages: collected, pageCount: pdf.numPages, pagesRaw: collected };
 }
 
 async function extractEpubPages(buffer) {
@@ -61,19 +67,20 @@ async function extractEpubPages(buffer) {
   const spine = await book.loaded.spine;
   const items = spine?.spineItems || [];
   const pages = [];
+  const pagesRaw = []; //pages with formatting of original file, for visualisation
 
   for (const item of items) {
-    const section = await item.load(book.load.bind(book));
-    const text = section?.body?.textContent || "";
+    const content = await item.load(book.load.bind(book));
+    const text = content.replace(/<[^>]+>/g, " "); //remove HTML tags
     pages.push(splitWords(cleanText(text)));
-    item.unload();
+    pagesRaw.push(content);
   }
-
-  return { pages, pageCount: pages.length };
+  return { pages, pageCount: pages.length, pagesRaw: pagesRaw };
 }
 
 export default function App() {
   const [pages, setPages] = useState([]); // array of word arrays per page
+  const [pagesRaw, setPagesRaw] = useState([]); // array of raw page contents for visualisation
   const [pageCount, setPageCount] = useState(0);
   const [startPage, setStartPage] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -83,6 +90,24 @@ export default function App() {
   const [status, setStatus] = useState("Wgraj PDF, aby zacząć");
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
+
+  const viewerRef = useRef(null);
+
+  const safeStart = useMemo(
+    () => (pages.length ? Math.min(Math.max(startPage, 1), pages.length) : 1),
+    [pages.length, startPage],
+  );
+  const pageOffsets = useMemo(() => {
+    const offsets = [];
+    let acc = 0;
+    for (const page of pages) {
+      const start = acc;
+      const end = acc + page.length;
+      offsets.push({ start, end });
+      acc = end;
+    }
+    return offsets;
+  }, [pages]);
 
   const words = useMemo(() => {
     if (!pages.length) return [];
@@ -111,8 +136,6 @@ export default function App() {
     setIsPlaying(false);
   }, [startPage, pages]);
 
-
-
   const handleFile = async (file) => {
     if (!file) return;
     setError("");
@@ -123,7 +146,7 @@ export default function App() {
       const buffer = await file.arrayBuffer();
 
       const extractor = isEpub(file) ? extractEpubPages : extractPdfPages;
-      const { pages: collected, pageCount: total } = await extractor(buffer);
+      const { pages: collected, pageCount: total, pagesRaw } = await extractor(buffer);
 
       setPageCount(total);
       setPages(collected);
@@ -131,11 +154,12 @@ export default function App() {
       setCurrentIndex(0);
       setStatus(`Wczytano ${total} stron/rozdziałów`);
       setFileName(file.name);
+      setPagesRaw(pagesRaw);
     } catch (err) {
       setError(
         isEpub(file)
           ? "Nie udało się odczytać EPUB. Upewnij się, że plik nie jest poprawny."
-          : "Nie udało się odczytać PDF. Upewnij się, że plik nie jest zabezpieczony."
+          : "Nie udało się odczytać PDF. Upewnij się, że plik nie jest zabezpieczony.",
       );
       console.error(err);
     } finally {
@@ -152,21 +176,69 @@ export default function App() {
   const currentWord = words[currentIndex] || "";
   const msPerWord = Math.round(60000 / wpm);
 
-  const visualisePage = async () => {
-    const page = pages[startPage - 1];
-    if (!page) return null;
-    /*idea: podgląd strony pdfa/epuba z podświetlonym aktualnym słowem,
-    trzeba by albo znaleźć renderer do canvasa albo generować html, dlatego ściągnąłem 
-    pdf2html
+  const { currentPageNumber, currentWordInPageIndex, currentPageWords } =
+    useMemo(() => {
+      if (!pages.length || !words.length) {
+        return { currentPageNumber: null, currentWordInPageIndex: null, currentPageWords: [] };
+      }
+      const globalStartOffset = pageOffsets[safeStart - 1]?.start ?? 0;
+      const globalWordIndex = globalStartOffset + currentIndex;
+      const pageIndex = pageOffsets.findIndex((p) => globalWordIndex < p.end);
+      const wordIndexInPage =
+        pageIndex >= 0 ? globalWordIndex - pageOffsets[pageIndex].start : null;
+      return {
+        currentPageNumber: pageIndex >= 0 ? pageIndex + 1 : null,
+        currentWordInPageIndex: wordIndexInPage,
+        currentPageWords: pageIndex >= 0 ? pages[pageIndex] : [],
+      };
+    }, [pages, words.length, pageOffsets, safeStart, currentIndex]);
 
-    trzeba znalezc cos do epuba np
-    https://github.com/readium
 
-    i oczywiscie zainplementowac dzialane pdf2html
-    */
+
+  const visualisePage = () => {
+    if(!isEpub({name: fileName})) {
+    return <> 
+          {currentPageNumber ? (
+            <>
+              <div className="page-meta">
+                Strona/rozdział: {currentPageNumber} z{" "}
+                {pageCount || pages.length}
+              </div>
+              <div className="page-text">
+                {currentPageWords.map((w, i) => (
+                  <span
+                    key={i}
+                    className={
+                      i === currentWordInPageIndex ? "word-highlight" : ""
+                    }
+                  >
+                    {w}{" "}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="hint">Wgraj plik, aby zobaczyć podgląd strony.</div>
+          )} </>;
+        }else
+    //use pages raw for visualisation with formatting
+    return <>
+
+      {currentPageNumber ? (
+        <>
+          <div className="page-meta">
+            Strona/rozdział: {currentPageNumber} z{" "}
+            {pageCount || pages.length}
+          </div>
+          <div
+            className="page-text"
+            dangerouslySetInnerHTML={{ __html: pagesRaw[currentPageNumber - 1] }}
+          ></div>
+        </>
+      ) : (
+        <div className="hint">Wgraj plik, aby zobaczyć podgląd strony.</div>
+      )} </>;
   }
-
-
 
 
   return (
@@ -186,11 +258,16 @@ export default function App() {
               onChange={(e) => handleFile(e.target.files?.[0])}
               disabled={loading}
             />
-            <p className="hint">Wgraj plik, a następnie wybierz stronę/rozdział startowy i prędkość.</p>
+            <p className="hint">
+              Wgraj plik, a następnie wybierz stronę/rozdział startowy i
+              prędkość.
+            </p>
           </div>
 
           <div className="control-group">
-            <label className="label">Prędkość: {wpm} słów/min (ok. {msPerWord} ms)</label>
+            <label className="label">
+              Prędkość: {wpm} słów/min (ok. {msPerWord} ms)
+            </label>
             <input
               type="range"
               min="120"
@@ -212,7 +289,9 @@ export default function App() {
                 onChange={(e) => handleStartPageChange(Number(e.target.value))}
                 disabled={!pageCount}
               />
-              <p className="hint">{pageCount ? `z ${pageCount} stron` : "Wgraj PDF"}</p>
+              <p className="hint">
+                {pageCount ? `z ${pageCount} stron` : "Wgraj PDF"}
+              </p>
             </div>
 
             <div className="control-group buttons">
@@ -242,17 +321,17 @@ export default function App() {
         </section>
 
         <section className="reader">
-          <div className="word-box">
-            {highlightWord(currentWord) || ""}
-            </div>
+          <div className="word-box">{highlightWord(currentWord) || ""}</div>
           <div className="progress">
             <span>
-              {words.length ? `${currentIndex + 1} / ${words.length} słów` : "Brak danych"}
+              {words.length
+                ? `${currentIndex + 1} / ${words.length} słów`
+                : "Brak danych"}
             </span>
           </div>
         </section>
-        <section className="pdf-visualisation">
-            {visualisePage()}
+        <section className="page-visualisation">
+          {visualisePage()}
         </section>
       </main>
     </div>
