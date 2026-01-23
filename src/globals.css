@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+.text-input{
+    background-color: var(--input-background);
+    color: var(--text);
+    border: var(--border) solid 1px;
+    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+}
+
+.text-input:focus{
+    outline: none;
+}
+
+.color-muted{
+    color: var(--muted)
+}

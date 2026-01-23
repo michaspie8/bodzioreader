@@ -3,6 +3,8 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import ePub from "epubjs";
 
+import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
+
 const defaultWpm = 400;
 
 function splitWords(text) {
@@ -248,7 +250,8 @@ export default function App() {
         <div className="file-info">{fileName || "Brak pliku"}</div>
       </header>
 
-      <main className="layout">
+      <main className="layout flex gap-4 flex-col">
+        <div className="flex gap-4">
         <section className="controls">
           <div className="control-group">
             <label className="label">Plik PDF lub EPUB</label>
@@ -320,7 +323,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="reader">
+        <section className="reader flex-grow-1">
           <div className="word-box">{highlightWord(currentWord) || ""}</div>
           <div className="progress">
             <span>
@@ -330,8 +333,10 @@ export default function App() {
             </span>
           </div>
         </section>
+
+        </div>
         <section className="page-visualisation">
-          {visualisePage()}
+          <PageVisualiser pageCount={15} />
         </section>
       </main>
     </div>
