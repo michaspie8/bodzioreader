@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import "./globals.css"
+import "./styles/buttons.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
