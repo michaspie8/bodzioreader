@@ -1,4 +1,4 @@
-function highlightWord(word) {
+function highlightWord(word: string) {
     if (!word) return null;
     const wordWithoutPunctuationAtEnd = word.replace(/[.,!?;:]+$/g, "");
     const middleIndex = Math.floor(wordWithoutPunctuationAtEnd.length / 2);
@@ -18,11 +18,15 @@ function highlightWord(word) {
     );
 }
 
-export default function pageReader({
+const PageReader = ({
     currentWord = "",
     wordsLength = 0,
     currentIndex = 0
-}) {
+}:{
+    currentWord: string,
+    wordsLength: number,
+    currentIndex: number
+}) =>{
     return (
         <section className="reader">
             <div className="word-box">{highlightWord(currentWord) || ""}</div>
@@ -34,3 +38,5 @@ export default function pageReader({
         </section>
     );
 }
+
+export default PageReader;
