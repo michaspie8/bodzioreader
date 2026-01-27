@@ -6,33 +6,8 @@ import { exampleWordsArray } from "./utils/exampleData.js";
 
 
 import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
-
+import PageReader from "./components/pageReader/pageReader.jsx";
 const defaultWpm = 400;
-
-
-
-//returns jsx of a word with highilighted middle letter
-function highlightWord(word) {
-  if (!word) return null;
-  const wordWithoutPunctuationAtEnd = word.replace(/[.,!?;:]+$/g, "");
-  const middleIndex = Math.floor(wordWithoutPunctuationAtEnd.length / 2);
-  const left = word.slice(0, middleIndex);
-  const middle = word[middleIndex] ?? "";
-  const right = word.slice(middleIndex + 1);
-  return (
-    <div className="word">
-      <span>{left}</span>
-      <span className="word-middle">
-        <div>^</div>
-        {middle}
-        <div>^</div>
-      </span>
-      <span>{right}</span>
-    </div>
-  );
-}
-
-
 
 
 
@@ -216,16 +191,11 @@ export default function App() {
             </div>
           </section>
 
-          <section className="reader flex-grow-1">
-            <div className="word-box">{highlightWord(currentWord) || ""}</div>
-            <div className="progress">
-              <span>
-                {words.length
-                  ? `${currentIndex + 1} / ${words.length} słów`
-                  : "Brak danych"}
-              </span>
-            </div>
-          </section>
+          <PageReader
+            currentWord={currentWord}
+            wordsLength={words.length}
+            currentIndex={currentIndex}
+          />
 
         </div>
         <section className="page-visualisation">
