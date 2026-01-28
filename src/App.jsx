@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { extractPdfPages } from "./utils/pdfExtractor.js";
+import { extractPdfPages } from "./utils/pdfExtractor.ts";
 import { extractEpubPages, isEpub } from "./utils/epubExtractor.js";
 
 import { exampleWordsArray } from "./utils/exampleData.js";
-
-
+import * as bookImporter from "./components/bookImporter/bookImporter.tsx";
 import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
-import PageReader from "./components/pageReader/pageReader.jsx";
+import PageReader from "./components/pageReader/pageReader.tsx";
 const defaultWpm = 400;
 
 
@@ -69,35 +68,31 @@ export default function App() {
     setIsPlaying(false);
   }, [startPage, pages]);
 
+
+  //TODO: Instead of saving all stuff use book var
   const handleFile = async (file) => {
     if (!file) return;
-    setError("");
+    const book = bookImporter.importBookFromFile(file);
     setLoading(true);
+    setError("");
     setStatus("Wczytywanie pliku...");
     setIsPlaying(false);
     try {
-      const buffer = await file.arrayBuffer();
-
-      const extractor = isEpub(file) ? extractEpubPages : extractPdfPages;
-      const { pages: collected, pageCount: total, pagesRaw } = await extractor(buffer);
-
-      setPageCount(total);
-      setPages(collected);
+      const importedBook = await book;
+      setPages(importedBook.pages);
+      setPageCount(importedBook.pages.length);
       setStartPage(1);
       setCurrentIndex(0);
-      setStatus(`Wczytano ${total} stron/rozdziałów`);
+      setStatus(`Wczytano ${importedBook.pages.length} stron/rozdziałów`);
       setFileName(file.name);
-      setPagesRaw(pagesRaw);
     } catch (err) {
-      setError(
-        isEpub(file)
-          ? "Nie udało się odczytać EPUB. Upewnij się, że plik nie jest poprawny."
-          : "Nie udało się odczytać PDF. Upewnij się, że plik nie jest zabezpieczony.",
-      );
+      setError("Nie udało się odczytać pliku. Upewnij się, że plik jest poprawny.");
       console.error(err);
     } finally {
       setLoading(false);
     }
+
+
   };
 
   const handleStartPageChange = (value) => {
@@ -119,7 +114,7 @@ export default function App() {
       </header>
 
       <main className="layout flex gap-4 flex-col">
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-col">
           <section className="controls">
             <div className="control-group">
               <label className="label">Plik PDF lub EPUB</label>

@@ -4,6 +4,10 @@ import { cleanText, splitWords } from "./extractorHelpers";
 export async function extractEpubPages(buffer) {
     const book = ePub(buffer);
     const spine = await book.loaded.spine;
+    const title = await book.loaded.metadata.title;
+    const author = await book.loaded.metadata.creator;
+    const isbn = await book.loaded.metadata.identifier;
+    
     const items = spine?.spineItems || [];
     const pages = [];
     const pagesRaw = []; //pages with formatting of original file, for visualisation
@@ -14,7 +18,7 @@ export async function extractEpubPages(buffer) {
         pages.push(splitWords(cleanText(text)));
         pagesRaw.push(content);
     }
-    return { pages, pageCount: pages.length, pagesRaw: pagesRaw };
+    return { pages, pageCount: pages.length, pagesRaw: pagesRaw, title, author, isbn };
 }
 
 export function isEpub(file) {
