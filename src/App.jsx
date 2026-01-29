@@ -118,8 +118,10 @@ export default function App() {
   return (
     <div className="page">
       <header className="top-bar">
-        <div className="brand">Fast Reading</div>
+        <div className="brand">Bodzio Reader</div>
         <div className="file-info">{fileName || "Brak pliku"}</div>
+        {/* powrot do biblioteki */}
+        <div className="library-return" > Powrót do biblioteki </div>
       </header>
 
       <main className="layout flex gap-4 flex-col">
@@ -129,11 +131,20 @@ export default function App() {
             <div className="control-group">
               <label className="label">Plik PDF lub EPUB</label>
               <input
+                id="file-input"
                 type="file"
                 accept="application/pdf,application/epub+zip,.epub"
                 onChange={(e) => handleFile(e.target.files?.[0])}
-                disabled={loading}
+                style={{display: "none"}}
               />
+              <button
+                className="btn primary w-30"
+                onClick={() => document.getElementById("file-input").click()}
+                disabled={loading}
+              >
+                Wgraj plik
+              </button>
+
               <p className="hint">
                 Wgraj plik, a następnie wybierz stronę/rozdział startowy i
                 prędkość.
@@ -141,10 +152,11 @@ export default function App() {
             </div>
 
             <div className="control-group">
-              <label className="label">
+              <label className="label" htmlFor="wpm-range">
                 Prędkość: {wpm} słów/min (ok. {msPerWord} ms)
               </label>
               <input
+                id="wpm-range"
                 type="range"
                 min="120"
                 max="1200"
