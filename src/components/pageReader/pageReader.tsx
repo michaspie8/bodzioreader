@@ -32,7 +32,7 @@ const PageReader = ({
             <div className="word-box">{highlightWord(currentWord) || ""}</div>
             <div className="progress">
                 <span>
-                    {wordsLength ? `${currentIndex + 1} / ${wordsLength} słów` : "Brak danych"}
+                    {wordsLength + currentIndex + 1 ? `${currentIndex + 1} / ${wordsLength} słów` : "Brak danych"}
                 </span>
             </div>
         </section>

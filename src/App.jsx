@@ -9,8 +9,9 @@ const defaultWpm = 400;
 
 export default function App() {
   const [book, setBook] = useState(null);
-  const [startPage, setStartPage] = useState(1);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [startPage, setStartPage] = useState(1);       // 1-based do inputa
+  const [pageIdx, setPageIdx] = useState(0);           // 0-based indeks strony
+  const [wordIdx, setWordIdx] = useState(0);           // 0-based indeks słowa na stronie
   const [isPlaying, setIsPlaying] = useState(false);
   const [wpm, setWpm] = useState(defaultWpm);
   const [loading, setLoading] = useState(false);
@@ -27,58 +28,60 @@ export default function App() {
     [pages.length, startPage],
   );
 
-  const pageOffsets = useMemo(() => {
-    const offsets = [];
-    let acc = 0;
-    for (const page of pages) {
-      const start = acc;
-      const end = acc + page.length;
-      offsets.push({ start, end });
-      acc = end;
-    }
-    return offsets;
+  const currentPageWords = pages[pageIdx] || [];
+  const currentWord = currentPageWords[wordIdx] || "";
+  const msPerWord = Math.round(60000 / wpm);
+
+  const numberOfWordsInPages = useMemo(() => {
+    return pages.map(page => page.length);
   }, [pages]);
 
-  const words = useMemo(() => {
-    if (!pages.length) return [];
-    const safeStart = Math.min(Math.max(startPage, 1), pages.length);
-    return pages.slice(safeStart - 1).flat();
-  }, [pages, startPage]);
-
-  const currentPageIndex = useMemo(() => {
-    if (!pages.length) return 0;
-    const globalIndex = currentIndex;
-    for (let i = 0; i < pageOffsets.length; i++) {
-      const { start, end } = pageOffsets[i];
-      if (globalIndex >= start && globalIndex < end) {
-        return i;
-      }
+  const totalWordsUpToPage = useMemo(() => {
+    const totals = [];
+    let acc = 0;
+    for (const count of numberOfWordsInPages) {
+      totals.push(acc);
+      acc += count;
     }
-    return pageOffsets.length - 1;
-  }, [currentIndex, pageOffsets, startPage, safeStart]);
+    return totals;
+  }, [numberOfWordsInPages]);
 
-  const displayedPage = Math.max(0, currentPageIndex + safeStart - 1);
 
   useEffect(() => {
-    if (!isPlaying || !words.length) return undefined;
+    if (!isPlaying || !pages.length) return undefined;
     const delay = Math.max(40, Math.round(60000 / wpm));
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const next = prev + 1;
-        if (next >= words.length) {
+      setWordIdx((w) => {
+        const wordsInPage = pages[pageIdx]?.length ?? 0;
+        if (w + 1 < wordsInPage) return w + 1;
+
+        // koniec strony -> spróbuj przejść do następnej
+        setPageIdx((p) => {
+          if (p + 1 < pages.length) {
+            setWordIdx(0);
+            return p + 1;
+          }
           setIsPlaying(false);
-          return prev;
-        }
-        return next;
+          return p;
+        });
+        return w;
       });
     }, delay);
     return () => clearInterval(timer);
-  }, [isPlaying, words.length, wpm, words]);
+  }, [isPlaying, wpm, pages, pageIdx]);
 
   useEffect(() => {
-    setCurrentIndex(0);
+    if (!pages.length) {
+      setPageIdx(0);
+      setWordIdx(0);
+      setIsPlaying(false);
+      return;
+    }
+    const nextPageIdx = safeStart - 1;
+    setPageIdx(nextPageIdx);
+    setWordIdx(0);
     setIsPlaying(false);
-  }, [startPage, pages]);
+  }, [safeStart, pages]);
 
 
   const handleFile = async (file) => {
@@ -91,7 +94,8 @@ export default function App() {
       const importedBook = await bookImporter.importBookFromFile(file);
       setBook(importedBook);
       setStartPage(1);
-      setCurrentIndex(0);
+      setPageIdx(0);
+      setWordIdx(0);
       setStatus(`Wczytano ${importedBook.pages.length} stron/rozdziałów`);
       setFileName(file.name);
     } catch (err) {
@@ -100,20 +104,16 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-
-
   };
 
   const handleStartPageChange = (value) => {
     if (!pages.length) return;
     const next = Math.min(Math.max(value, 1), pages.length);
     setStartPage(next);
+    setPageIdx(next - 1);
+    setWordIdx(0);
+    setIsPlaying(false);
   };
-
-  const currentWord = words[currentIndex] || "";
-  const msPerWord = Math.round(60000 / wpm);
-
-
 
   return (
     <div className="page">
@@ -174,17 +174,17 @@ export default function App() {
                 <button
                   className="btn primary"
                   onClick={() => setIsPlaying((prev) => !prev)}
-                  disabled={!words.length || loading}
+                  disabled={(!currentPageWords.length && pageIdx === pages.length) || loading}
                 >
                   {isPlaying ? "Pauza" : "Start"}
                 </button>
                 <button
                   className="btn ghost"
                   onClick={() => {
-                    setCurrentIndex(0);
+                    setWordIdx(0);
                     setIsPlaying(false);
                   }}
-                  disabled={!words.length}
+                  disabled={!currentPageWords.length}
                 >
                   Restart
                 </button>
@@ -198,17 +198,17 @@ export default function App() {
 
           <PageReader
             currentWord={currentWord}
-            wordsLength={words.length}
-            currentIndex={currentIndex}
+            wordsLength={totalWordsUpToPage[totalWordsUpToPage.length-1]}
+            currentIndex={totalWordsUpToPage[pageIdx] + wordIdx}
           />
 
         </div>
         <section className="page-visualisation">
           <PageVisualiser
             pageCount={pages.length}
-            words={pages[displayedPage] || []}
-            highlightIndex={currentIndex - pageOffsets[displayedPage]?.start || null}
-            page={displayedPage}
+            words={currentPageWords}
+            highlightIndex={wordIdx}
+            page={pageIdx}
             mode="preview"
             onChangePage={(page) => handleStartPageChange(page + 1)}
           />
