@@ -1,5 +1,5 @@
 import * as pdfUtils from "../../utils/pdfExtractor";
-import * as epubUtils from "../../utils/epubExtractor";
+import * as epubUtils from "../../utils/ePubExtractor";
 
 class Book {
   title: string;
@@ -83,6 +83,7 @@ const importEPUB = async (file: File): Promise<Book> => {
     }
     try {
       const extractor = epubUtils.extractEpubPages(await file.arrayBuffer());
+      
       const { title, author, isbn, pages } = await extractor;
       const book = new Book(title, author, pages, isbn);
       await book.tryFindCoverImage();

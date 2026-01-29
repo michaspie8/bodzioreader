@@ -55,8 +55,9 @@ export default function App() {
       }
     }
     return pageOffsets.length - 1;
-  }, [currentIndex, pageOffsets]);
+  }, [currentIndex, pageOffsets, startPage, safeStart]);
 
+  const displayedPage = Math.max(0, currentPageIndex + safeStart - 1);
 
   useEffect(() => {
     if (!isPlaying || !words.length) return undefined;
@@ -205,10 +206,11 @@ export default function App() {
         <section className="page-visualisation">
           <PageVisualiser
             pageCount={pages.length}
-            words={pages[safeStart - 1] || []}
-            highlightIndex={currentIndex - (pageOffsets[safeStart - 1]?.start || 0)}
-            page={currentPageIndex + safeStart - 1}
+            words={pages[displayedPage] || []}
+            highlightIndex={currentIndex - pageOffsets[displayedPage]?.start || null}
+            page={displayedPage}
             mode="preview"
+            onChangePage={(page) => handleStartPageChange(page + 1)}
           />
         </section>
       </main>

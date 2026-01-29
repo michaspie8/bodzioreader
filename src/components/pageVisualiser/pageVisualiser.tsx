@@ -65,7 +65,8 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
       {mode === 'preview' ?
         <div className="color-muted">
           {words?.slice(0, highlightIndex).join(' ') + ' '}
-          <span className="color-accent">{words?.[highlightIndex]}</span>
+          <span className="color-accent">{words?.slice(highlightIndex, highlightIndex + 1).join(' ')}</span>
+          
           {' ' + words?.slice(highlightIndex + 1).join(' ')}
         </div>
         :
