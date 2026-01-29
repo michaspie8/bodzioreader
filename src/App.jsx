@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { extractPdfPages } from "./utils/pdfExtractor.ts";
-import { extractEpubPages, isEpub } from "./utils/epubExtractor.js";
-
-import { exampleWordsArray } from "./utils/exampleData.js";
+// removed unused extractor imports; bookImporter handles extraction
 import * as bookImporter from "./components/bookImporter/bookImporter.tsx";
 import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
 import PageReader from "./components/pageReader/pageReader.tsx";
@@ -11,9 +8,7 @@ const defaultWpm = 400;
 
 
 export default function App() {
-  const [pages, setPages] = useState([]); // array of word arrays per page
-  const [pagesRaw, setPagesRaw] = useState([]); // array of raw page contents for visualisation
-  const [pageCount, setPageCount] = useState(0);
+  const [book, setBook] = useState(null);
   const [startPage, setStartPage] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,12 +18,15 @@ export default function App() {
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
 
-  const viewerRef = useRef(null);
+  
+
+  const pages = useMemo(() => book?.pages || [], [book]);
 
   const safeStart = useMemo(
     () => (pages.length ? Math.min(Math.max(startPage, 1), pages.length) : 1),
     [pages.length, startPage],
   );
+
   const pageOffsets = useMemo(() => {
     const offsets = [];
     let acc = 0;
@@ -46,6 +44,19 @@ export default function App() {
     const safeStart = Math.min(Math.max(startPage, 1), pages.length);
     return pages.slice(safeStart - 1).flat();
   }, [pages, startPage]);
+
+  const currentPageIndex = useMemo(() => {
+    if (!pages.length) return 0;
+    const globalIndex = currentIndex;
+    for (let i = 0; i < pageOffsets.length; i++) {
+      const { start, end } = pageOffsets[i];
+      if (globalIndex >= start && globalIndex < end) {
+        return i;
+      }
+    }
+    return pageOffsets.length - 1;
+  }, [currentIndex, pageOffsets]);
+
 
   useEffect(() => {
     if (!isPlaying || !words.length) return undefined;
@@ -69,18 +80,15 @@ export default function App() {
   }, [startPage, pages]);
 
 
-  //TODO: Instead of saving all stuff use book var
   const handleFile = async (file) => {
     if (!file) return;
-    const book = bookImporter.importBookFromFile(file);
     setLoading(true);
     setError("");
     setStatus("Wczytywanie pliku...");
     setIsPlaying(false);
     try {
-      const importedBook = await book;
-      setPages(importedBook.pages);
-      setPageCount(importedBook.pages.length);
+      const importedBook = await bookImporter.importBookFromFile(file);
+      setBook(importedBook);
       setStartPage(1);
       setCurrentIndex(0);
       setStatus(`Wczytano ${importedBook.pages.length} stron/rozdziałów`);
@@ -96,8 +104,8 @@ export default function App() {
   };
 
   const handleStartPageChange = (value) => {
-    if (!pageCount) return;
-    const next = Math.min(Math.max(value, 1), pageCount);
+    if (!pages.length) return;
+    const next = Math.min(Math.max(value, 1), pages.length);
     setStartPage(next);
   };
 
@@ -116,6 +124,7 @@ export default function App() {
       <main className="layout flex gap-4 flex-col">
         <div className="flex gap-4 flex-col">
           <section className="controls">
+            <img src={book?.coverImageURL || ""} alt={book?.coverImageURL} style={{maxHeight: '150px', aspectRatio: 'auto', marginBottom: '10px'}}/>
             <div className="control-group">
               <label className="label">Plik PDF lub EPUB</label>
               <input
@@ -150,13 +159,13 @@ export default function App() {
                 <input
                   type="number"
                   min="1"
-                  max={pageCount || 1}
+                  max={pages.length || 1}
                   value={startPage}
                   onChange={(e) => handleStartPageChange(Number(e.target.value))}
-                  disabled={!pageCount}
+                  disabled={!pages.length}
                 />
                 <p className="hint">
-                  {pageCount ? `z ${pageCount} stron` : "Wgraj PDF"}
+                  {pages.length ? `z ${pages.length} stron` : "Wgraj PDF"}
                 </p>
               </div>
 
@@ -194,7 +203,13 @@ export default function App() {
 
         </div>
         <section className="page-visualisation">
-          <PageVisualiser pageCount={15} words={exampleWordsArray} highlightIndex={6} page={1} mode="edit" />
+          <PageVisualiser
+            pageCount={pages.length}
+            words={pages[safeStart - 1] || []}
+            highlightIndex={currentIndex - (pageOffsets[safeStart - 1]?.start || 0)}
+            page={currentPageIndex + safeStart - 1}
+            mode="preview"
+          />
         </section>
       </main>
     </div>

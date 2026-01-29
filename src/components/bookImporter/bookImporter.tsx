@@ -12,7 +12,6 @@ class Book {
     this.author = author;
     this.pages = pages;
     this.isbn = isbn;
-    this.tryFindCoverImage();
   }
 
   static async tryFindCoverImage(
@@ -27,8 +26,14 @@ class Book {
 
     if (title) {
       try {
+        //change every special character to space, then multiple spaces to single space, trim, then spaces to +
+        const cleantitle = title
+          .replace(/[^a-zA-Z0-9\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/ /g, "+");
         const response = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}`,
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(cleantitle)}`,
         );
         if (response.ok) {
           const result = await response.json();
@@ -38,7 +43,8 @@ class Book {
           }
         }
       } catch {
-        // ignore
+        console.log("Error fetching cover image from OpenLibrary");
+        console.log(title);
       }
     }
 
@@ -61,8 +67,9 @@ const importPDF = async (file: File): Promise<Book> => {
       const title = file.name.replace(/\.[^/.]+$/, ""); // filename without extension
       const author = "unknown";
       const {pages, pageCount, pagesRaw} = await extractor;
-    //decide what to do with pagesRaw etc.
-        resolve(new Book(title, author, pages));
+    const book = new Book(title, author, pages);
+      await book.tryFindCoverImage();
+      resolve(book);
     } catch (error) {
       reject(error);
     }
@@ -77,7 +84,9 @@ const importEPUB = async (file: File): Promise<Book> => {
     try {
       const extractor = epubUtils.extractEpubPages(await file.arrayBuffer());
       const { title, author, isbn, pages } = await extractor;
-      resolve(new Book(title, author, pages, isbn));
+      const book = new Book(title, author, pages, isbn);
+      await book.tryFindCoverImage();
+      resolve(book);
     } catch (error) {
       reject(error);
     }
