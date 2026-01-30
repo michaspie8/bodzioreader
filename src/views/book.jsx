@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { extractPdfPages } from "./utils/pdfExtractor.js";
-import { extractEpubPages, isEpub } from "./utils/epubExtractor.js";
+import { extractPdfPages } from "../utils/pdfExtractor.js";
+import { extractEpubPages, isEpub } from "../utils/epubExtractor.js";
 
-import { exampleWordsArray } from "./utils/exampleData.js";
+import { exampleWordsArray } from "../utils/exampleData.ts";
 
 
-import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
+import PageVisualiser from "../components/pageVisualiser/pageVisualiser.tsx";
 
 const defaultWpm = 400;
 
@@ -36,7 +36,7 @@ function highlightWord(word) {
 
 
 
-export default function App() {
+export default function Book() {
   const [pages, setPages] = useState([]); // array of word arrays per page
   const [pagesRaw, setPagesRaw] = useState([]); // array of raw page contents for visualisation
   const [pageCount, setPageCount] = useState(0);
@@ -48,24 +48,6 @@ export default function App() {
   const [status, setStatus] = useState("Wgraj PDF, aby zacząć");
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
-
-  const viewerRef = useRef(null);
-
-  const safeStart = useMemo(
-    () => (pages.length ? Math.min(Math.max(startPage, 1), pages.length) : 1),
-    [pages.length, startPage],
-  );
-  const pageOffsets = useMemo(() => {
-    const offsets = [];
-    let acc = 0;
-    for (const page of pages) {
-      const start = acc;
-      const end = acc + page.length;
-      offsets.push({ start, end });
-      acc = end;
-    }
-    return offsets;
-  }, [pages]);
 
   const words = useMemo(() => {
     if (!pages.length) return [];
@@ -137,11 +119,7 @@ export default function App() {
 
 
   return (
-    <div className="page">
-      <header className="top-bar">
-        <div className="brand">Fast Reading</div>
-        <div className="file-info">{fileName || "Brak pliku"}</div>
-      </header>
+    
 
       <main className="layout flex gap-4 flex-col">
         <div className="flex gap-4">
@@ -229,9 +207,8 @@ export default function App() {
 
         </div>
         <section className="page-visualisation">
-          <PageVisualiser pageCount={15} words={exampleWordsArray} highlightIndex={6} page={1} mode="edit" />
+          <PageVisualiser pageCount={15} words={exampleWordsArray} highlightIndex={46} page={1} mode="preview" />
         </section>
       </main>
-    </div>
   );
 }

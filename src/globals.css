@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+:root {
+    --bg: #0b0d11;
+    --bgGradientColor1: #111828;
+    --bgGradientColor2: #0d182a;
+    --panel: #141824;
+    --text: #e9ecf1;
+    --muted: #9aa0b5;
+    --accent: #ff3b30;
+    --primary: #3ea6ff;
+    --primary-strong: #2a88d6;
+    --border: #1f2433;
+    --border-light: #454c62;
+    --input-background: #0f1220;
+}
+
+@theme {
+    --color-bg: var(--bg);
+    --color-panel: var(--panel);
+    --color-text: var(--text);
+    --color-muted: var(--muted);
+    --color-accent: var(--accent);
+    --color-border: var(--border);
+    --color-border-light: var(--border-light);
+    --color-input-background: var(--input-background);
+    --color-primary: var(--primary);
+    --color-primary-strong: var(--primary-strong);
+}
+
 .text-input {
     background-color: var(--input-background);
     color: var(--text);
@@ -10,14 +38,13 @@
     outline: none;
 }
 
-.color-muted {
-    color: var(--muted)
+.no-spinbox::-webkit-outer-spin-button,
+.no-spinbox::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.color-accent {
-    color: var(--accent)
-}
-
-.color-border-light {
-    color: var(--border-light)
+.no-spinbox {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

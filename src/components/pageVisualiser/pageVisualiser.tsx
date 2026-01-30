@@ -1,5 +1,4 @@
 import { Icon } from '@iconify/react';
-import "./style.css"
 import { useEffect, useState } from 'react';
 
 const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChangePage: onPageChange, onChangeMode: onModeChange, onAddPage, onEditPage, onDeletePage, onSaveChanges }: {
@@ -15,6 +14,7 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
   onDeletePage?: () => void,
   onSaveChanges?: (newWords: string[]) => void,
 }) => {
+  
 
   const [inputWords, setInputWords] = useState<string>("");
 
@@ -26,21 +26,29 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
 
   }, [mode, words]);
 
-  return <div className="page-visualiser-container p-4 rounded-lg w-full gap-4 flex flex-col">
+  return <div className="p-4 rounded-lg w-full gap-4 flex flex-col border-1 border-border bg-panel">
     <header className="flex justify-between">
       {mode === 'preview' ? 'Preview' : 'Editing page'}
       {mode === 'preview' ?
-        <div className="color-muted text-sm flex items-center gap-2">
+        <div className="text-muted text-sm flex items-center gap-2">
           <div>
-            Page:&nbsp;&nbsp;<input type="text" className="text-input rounded-md text-center w-12 py-1" value={page} />&nbsp;&nbsp; of {pageCount}
+            Page:&nbsp;&nbsp;
+            <input 
+              type="number" 
+              className="text-input rounded-md text-center w-fit py-1 no-spinbox" defaultValue={page} min={1} max={pageCount} 
+              onChange={(e) => onPageChange && !isNaN(Number(e.target.value)) && Number(e.target.value) >= 1 && Number(e.target.value) <= pageCount ? onPageChange(Number(e.target.value)) : undefined} 
+            />
+            &nbsp;&nbsp; of {pageCount}
           </div>
           <div className='flex items-center gap-2'>
 
-            <button onClick={page > 1 && onPageChange ? () => onPageChange(page - 1) : undefined}>
-              <Icon icon="mdi:arrow-left" height={24} className={page == 1 ? 'color-border-light' : ''}></Icon>
+            <button onClick={page > 1 && onPageChange ? () => onPageChange(page - 1) : undefined}
+              disabled={page == 1}>
+              <Icon icon="mdi:arrow-left" height={24} className={page == 1 ? 'text-border-light' : ''}></Icon>
             </button>
-            <button className="rotate-180" onClick={page < pageCount && onPageChange ? () => onPageChange(page + 1) : undefined}>
-              <Icon icon="mdi:arrow-left" height={24} className={page > pageCount ? 'color-border-light' : ''}></Icon>
+            <button className="rotate-180" onClick={page < pageCount && onPageChange ? () => onPageChange(page + 1) : undefined}
+              disabled={page == pageCount}>
+              <Icon icon="mdi:arrow-left" height={24} className={page >= pageCount ? 'text-border-light' : ''}></Icon>
             </button>
             <button onClick={onAddPage}>
               <Icon icon="mdi:plus" height={32}></Icon>
@@ -53,7 +61,7 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
             </button>
           </div>
 
-        </div> : <div className='color-muted text-sm'>
+        </div> : <div className='text-muted text-sm'>
           Page {page} of {pageCount}
         </div>
       }
@@ -63,9 +71,9 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
     </header>
     <div>
       {mode === 'preview' ?
-        <div className="color-muted">
+        <div className="text-muted">
           {words?.slice(0, highlightIndex).join(' ') + ' '}
-          <span className="color-accent">{words?.[highlightIndex]}</span>
+          <span className="text-accent">{words?.[highlightIndex]}</span>
           {' ' + words?.slice(highlightIndex + 1).join(' ')}
         </div>
         :
