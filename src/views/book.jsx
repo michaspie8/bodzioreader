@@ -1,47 +1,17 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { extractPdfPages } from "../utils/pdfExtractor.js";
-import { extractEpubPages, isEpub } from "../utils/epubExtractor.js";
-
-import { exampleWordsArray } from "../utils/exampleData.ts";
-
-
-import PageVisualiser from "../components/pageVisualiser/pageVisualiser.tsx";
-
+// removed unused extractor imports; bookImporter handles extraction
+import * as bookImporter from "./components/bookImporter/bookImporter.tsx";
+import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
+import PageReader from "./components/pageReader/pageReader.tsx";
 const defaultWpm = 400;
 
 
 
-//returns jsx of a word with highilighted middle letter
-function highlightWord(word) {
-  if (!word) return null;
-  const wordWithoutPunctuationAtEnd = word.replace(/[.,!?;:]+$/g, "");
-  const middleIndex = Math.floor(wordWithoutPunctuationAtEnd.length / 2);
-  const left = word.slice(0, middleIndex);
-  const middle = word[middleIndex] ?? "";
-  const right = word.slice(middleIndex + 1);
-  return (
-    <div className="word">
-      <span>{left}</span>
-      <span className="word-middle">
-        <div>^</div>
-        {middle}
-        <div>^</div>
-      </span>
-      <span>{right}</span>
-    </div>
-  );
-}
-
-
-
-
-
-export default function Book() {
-  const [pages, setPages] = useState([]); // array of word arrays per page
-  const [pagesRaw, setPagesRaw] = useState([]); // array of raw page contents for visualisation
-  const [pageCount, setPageCount] = useState(0);
-  const [startPage, setStartPage] = useState(1);
-  const [currentIndex, setCurrentIndex] = useState(0);
+export default function App() {
+  const [book, setBook] = useState(null);
+  const [startPage, setStartPage] = useState(1);       // 1-based do inputa
+  const [pageIdx, setPageIdx] = useState(0);           // 0-based indeks strony
+  const [wordIdx, setWordIdx] = useState(0);           // 0-based indeks słowa na stronie
   const [isPlaying, setIsPlaying] = useState(false);
   const [wpm, setWpm] = useState(defaultWpm);
   const [loading, setLoading] = useState(false);
@@ -49,58 +19,87 @@ export default function Book() {
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
 
-  const words = useMemo(() => {
-    if (!pages.length) return [];
-    const safeStart = Math.min(Math.max(startPage, 1), pages.length);
-    return pages.slice(safeStart - 1).flat();
-  }, [pages, startPage]);
+  
+
+  const pages = useMemo(() => book?.pages || [], [book]);
+
+  const safeStart = useMemo(
+    () => (pages.length ? Math.min(Math.max(startPage, 1), pages.length) : 1),
+    [pages.length, startPage],
+  );
+
+  const currentPageWords = pages[pageIdx] || [];
+  const currentWord = currentPageWords[wordIdx] || "";
+  const msPerWord = Math.round(60000 / wpm);
+
+  const numberOfWordsInPages = useMemo(() => {
+    return pages.map(page => page.length);
+  }, [pages]);
+
+  const totalWordsUpToPage = useMemo(() => {
+    const totals = [];
+    let acc = 0;
+    for (const count of numberOfWordsInPages) {
+      totals.push(acc);
+      acc += count;
+    }
+    return totals;
+  }, [numberOfWordsInPages]);
+
 
   useEffect(() => {
-    if (!isPlaying || !words.length) return undefined;
+    if (!isPlaying || !pages.length) return undefined;
     const delay = Math.max(40, Math.round(60000 / wpm));
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const next = prev + 1;
-        if (next >= words.length) {
+      setWordIdx((w) => {
+        const wordsInPage = pages[pageIdx]?.length ?? 0;
+        if (w + 1 < wordsInPage) return w + 1;
+
+        // koniec strony -> spróbuj przejść do następnej
+        setPageIdx((p) => {
+          if (p + 1 < pages.length) {
+            setWordIdx(0);
+            return p + 1;
+          }
           setIsPlaying(false);
-          return prev;
-        }
-        return next;
+          return p;
+        });
+        return w;
       });
     }, delay);
     return () => clearInterval(timer);
-  }, [isPlaying, words.length, wpm, words]);
+  }, [isPlaying, wpm, pages, pageIdx]);
 
   useEffect(() => {
-    setCurrentIndex(0);
+    if (!pages.length) {
+      setPageIdx(0);
+      setWordIdx(0);
+      setIsPlaying(false);
+      return;
+    }
+    const nextPageIdx = safeStart - 1;
+    setPageIdx(nextPageIdx);
+    setWordIdx(0);
     setIsPlaying(false);
-  }, [startPage, pages]);
+  }, [safeStart, pages]);
+
 
   const handleFile = async (file) => {
     if (!file) return;
-    setError("");
     setLoading(true);
+    setError("");
     setStatus("Wczytywanie pliku...");
     setIsPlaying(false);
     try {
-      const buffer = await file.arrayBuffer();
-
-      const extractor = isEpub(file) ? extractEpubPages : extractPdfPages;
-      const { pages: collected, pageCount: total, pagesRaw } = await extractor(buffer);
-
-      setPageCount(total);
-      setPages(collected);
+      const importedBook = await bookImporter.importBookFromFile(file);
+      setBook(importedBook);
       setStartPage(1);
-      setCurrentIndex(0);
-      setStatus(`Wczytano ${total} stron/rozdziałów`);
+      setPageIdx(0);
+      setWordIdx(0);
+      setStatus(`Wczytano ${importedBook.pages.length} stron/rozdziałów`);
       setFileName(file.name);
-      setPagesRaw(pagesRaw);
     } catch (err) {
-      setError(
-        isEpub(file)
-          ? "Nie udało się odczytać EPUB. Upewnij się, że plik nie jest poprawny."
-          : "Nie udało się odczytać PDF. Upewnij się, że plik nie jest zabezpieczony.",
-      );
+      setError("Nie udało się odczytać pliku. Upewnij się, że plik jest poprawny.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -108,30 +107,44 @@ export default function Book() {
   };
 
   const handleStartPageChange = (value) => {
-    if (!pageCount) return;
-    const next = Math.min(Math.max(value, 1), pageCount);
+    if (!pages.length) return;
+    const next = Math.min(Math.max(value, 1), pages.length);
     setStartPage(next);
+    setPageIdx(next - 1);
+    setWordIdx(0);
+    setIsPlaying(false);
   };
 
-  const currentWord = words[currentIndex] || "";
-  const msPerWord = Math.round(60000 / wpm);
-
-
-
   return (
-    
+    <div className="page">
+      <header className="top-bar">
+        <div className="brand">Bodzio Reader</div>
+        <div className="file-info">{fileName || "Brak pliku"}</div>
+        {/* powrot do biblioteki */}
+        <div className="library-return" > Powrót do biblioteki </div>
+      </header>
 
       <main className="layout flex gap-4 flex-col">
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-col">
           <section className="controls">
+            <img src={book?.coverImageURL || ""} alt={book?.coverImageURL} style={{maxHeight: '150px', aspectRatio: 'auto', marginBottom: '10px'}}/>
             <div className="control-group">
               <label className="label">Plik PDF lub EPUB</label>
               <input
+                id="file-input"
                 type="file"
                 accept="application/pdf,application/epub+zip,.epub"
                 onChange={(e) => handleFile(e.target.files?.[0])}
-                disabled={loading}
+                style={{display: "none"}}
               />
+              <button
+                className="btn primary w-30"
+                onClick={() => document.getElementById("file-input").click()}
+                disabled={loading}
+              >
+                Wgraj plik
+              </button>
+
               <p className="hint">
                 Wgraj plik, a następnie wybierz stronę/rozdział startowy i
                 prędkość.
@@ -139,10 +152,11 @@ export default function Book() {
             </div>
 
             <div className="control-group">
-              <label className="label">
+              <label className="label" htmlFor="wpm-range">
                 Prędkość: {wpm} słów/min (ok. {msPerWord} ms)
               </label>
               <input
+                id="wpm-range"
                 type="range"
                 min="120"
                 max="1200"
@@ -158,13 +172,13 @@ export default function Book() {
                 <input
                   type="number"
                   min="1"
-                  max={pageCount || 1}
+                  max={pages.length || 1}
                   value={startPage}
                   onChange={(e) => handleStartPageChange(Number(e.target.value))}
-                  disabled={!pageCount}
+                  disabled={!pages.length}
                 />
                 <p className="hint">
-                  {pageCount ? `z ${pageCount} stron` : "Wgraj PDF"}
+                  {pages.length ? `z ${pages.length} stron` : "Wgraj PDF"}
                 </p>
               </div>
 
@@ -172,17 +186,17 @@ export default function Book() {
                 <button
                   className="btn primary"
                   onClick={() => setIsPlaying((prev) => !prev)}
-                  disabled={!words.length || loading}
+                  disabled={(!currentPageWords.length && pageIdx === pages.length) || loading}
                 >
                   {isPlaying ? "Pauza" : "Start"}
                 </button>
                 <button
                   className="btn ghost"
                   onClick={() => {
-                    setCurrentIndex(0);
+                    setWordIdx(0);
                     setIsPlaying(false);
                   }}
-                  disabled={!words.length}
+                  disabled={!currentPageWords.length}
                 >
                   Restart
                 </button>
@@ -194,20 +208,22 @@ export default function Book() {
             </div>
           </section>
 
-          <section className="reader flex-grow-1">
-            <div className="word-box">{highlightWord(currentWord) || ""}</div>
-            <div className="progress">
-              <span>
-                {words.length
-                  ? `${currentIndex + 1} / ${words.length} słów`
-                  : "Brak danych"}
-              </span>
-            </div>
-          </section>
+          <PageReader
+            currentWord={currentWord}
+            wordsLength={totalWordsUpToPage[totalWordsUpToPage.length-1]}
+            currentIndex={totalWordsUpToPage[pageIdx] + wordIdx}
+          />
 
         </div>
         <section className="page-visualisation">
-          <PageVisualiser pageCount={15} words={exampleWordsArray} highlightIndex={46} page={1} mode="preview" />
+          <PageVisualiser
+            pageCount={pages.length}
+            words={currentPageWords}
+            highlightIndex={wordIdx}
+            page={pageIdx}
+            mode="preview"
+            onChangePage={(page) => handleStartPageChange(page + 1)}
+          />
         </section>
       </main>
   );
