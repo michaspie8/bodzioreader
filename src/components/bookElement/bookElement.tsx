@@ -1,11 +1,13 @@
 import { Icon } from "@iconify/react";
 import { BaseBookData } from "../../db/db";
 
-const BookElement = ({book}: {book?: BaseBookData}) => {
+const BookElement = ({book, onClick}: {book?: BaseBookData, onClick?: () => void}) => {
 
     return <div className={`w-48 aspect-1/1 border-1 border-border rounded-lg p-4 flex flex-col justify-center gap-2 cursor-default hover:border-border-light transition-all ${
         !book ? 'bg-transparent' : 'bg-panel'
-    }`}>
+    }`}
+    onClick={onClick}
+    >
         {
             book ? 
             <>

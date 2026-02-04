@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 // removed unused extractor imports; bookImporter handles extraction
-import * as bookImporter from "./components/bookImporter/bookImporter.tsx";
-import PageVisualiser from "./components/pageVisualiser/pageVisualiser.tsx";
-import PageReader from "./components/pageReader/pageReader.tsx";
+import PageVisualiser from "../components/pageVisualiser/pageVisualiser.tsx";
+import PageReader from "../components/pageReader/pageReader.tsx";
+import { IBook, importBookFromFile } from "../utils/bookImporter/bookImporter.ts";
 const defaultWpm = 400;
 
 
 
-export default function App() {
-  const [book, setBook] = useState(null);
+export default function Book() {
+  const [book, setBook] = useState<IBook| null>(null);
   const [startPage, setStartPage] = useState(1);       // 1-based do inputa
   const [pageIdx, setPageIdx] = useState(0);           // 0-based indeks strony
   const [wordIdx, setWordIdx] = useState(0);           // 0-based indeks słowa na stronie
@@ -28,12 +28,12 @@ export default function App() {
     [pages.length, startPage],
   );
 
-  const currentPageWords = pages[pageIdx] || [];
+  const currentPageWords = pages[pageIdx]?.words || [];
   const currentWord = currentPageWords[wordIdx] || "";
   const msPerWord = Math.round(60000 / wpm);
 
   const numberOfWordsInPages = useMemo(() => {
-    return pages.map(page => page.length);
+    return pages.map(page => page.words.length);
   }, [pages]);
 
   const totalWordsUpToPage = useMemo(() => {
@@ -52,7 +52,7 @@ export default function App() {
     const delay = Math.max(40, Math.round(60000 / wpm));
     const timer = setInterval(() => {
       setWordIdx((w) => {
-        const wordsInPage = pages[pageIdx]?.length ?? 0;
+        const wordsInPage = pages[pageIdx]?.words.length ?? 0;
         if (w + 1 < wordsInPage) return w + 1;
 
         // koniec strony -> spróbuj przejść do następnej
@@ -84,14 +84,15 @@ export default function App() {
   }, [safeStart, pages]);
 
 
-  const handleFile = async (file) => {
+  const handleFile = async (file: File) => {
     if (!file) return;
     setLoading(true);
     setError("");
     setStatus("Wczytywanie pliku...");
     setIsPlaying(false);
     try {
-      const importedBook = await bookImporter.importBookFromFile(file);
+      const importedBook = await importBookFromFile(file);
+      console.log(importedBook)
       setBook(importedBook);
       setStartPage(1);
       setPageIdx(0);
@@ -106,7 +107,7 @@ export default function App() {
     }
   };
 
-  const handleStartPageChange = (value) => {
+  const handleStartPageChange = (value: number) => {
     if (!pages.length) return;
     const next = Math.min(Math.max(value, 1), pages.length);
     setStartPage(next);
@@ -116,13 +117,7 @@ export default function App() {
   };
 
   return (
-    <div className="page">
-      <header className="top-bar">
-        <div className="brand">Bodzio Reader</div>
-        <div className="file-info">{fileName || "Brak pliku"}</div>
-        {/* powrot do biblioteki */}
-        <div className="library-return" > Powrót do biblioteki </div>
-      </header>
+    
 
       <main className="layout flex gap-4 flex-col">
         <div className="flex gap-4 flex-col">
@@ -134,12 +129,12 @@ export default function App() {
                 id="file-input"
                 type="file"
                 accept="application/pdf,application/epub+zip,.epub"
-                onChange={(e) => handleFile(e.target.files?.[0])}
+                onChange={(e) => handleFile(e.target.files?.[0] as File)}
                 style={{display: "none"}}
               />
               <button
                 className="btn primary w-30"
-                onClick={() => document.getElementById("file-input").click()}
+                onClick={() => document.getElementById("file-input")?.click()}
                 disabled={loading}
               >
                 Wgraj plik
@@ -226,6 +221,5 @@ export default function App() {
           />
         </section>
       </main>
-      </div>
   );
 }

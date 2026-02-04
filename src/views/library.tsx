@@ -1,23 +1,40 @@
+import { useState } from "react";
 import BookElement from "../components/bookElement/bookElement";
+import Dialog from "../components/dialog/dialog";
 import { Book, getBaseData } from "../db/db"
 import { exampleBooks } from "../utils/exampleData";
+import CreateBookForm from "../components/createBookForm/createBookForm";
 
 
 export default function Library() {
 
     const books = getBaseData() || [];
 
+    const [showDialog, setShowDialog] = useState(false);
+    
+    const onNewBookClick = () => {
+        setShowDialog(true);
+    }
+
+    const onNewBookCancel = () => {
+        setShowDialog(false);
+    }
+
 
 
 
     return <main>
+        <Dialog title="Library" align="text-left" visible={showDialog}
+        onClose={onNewBookCancel}>
+            <CreateBookForm />
+        </Dialog>
         <ul className="flex gap-4 flex-wrap">
             {books.map(book => (
             <li key={book.id}>
                 <BookElement book={book} />
             </li>
         ))}
-        <li><BookElement book={undefined} /></li>
+        <li><BookElement book={undefined} onClick={onNewBookClick} /></li>
         </ul>
         
         
