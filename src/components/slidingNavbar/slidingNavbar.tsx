@@ -14,7 +14,7 @@ const SlidingNavbar = ({
     const selectedButtonElement = useRef<HTMLLIElement | null>(null);
     const underline = useRef<HTMLDivElement | null>(null);
 
-    useEffect(() => {
+    const updateSlider = () => {
         const targetElement = selectedButtonElement.current;
         if (!targetElement || !underline.current) return;
 
@@ -23,6 +23,25 @@ const SlidingNavbar = ({
 
         underline.current.style.transform = `translateX(${left}px)`;
         underline.current.style.width = `${width}px`;
+    }
+
+    useEffect(() => {
+        updateSlider();
+
+        const observer = new ResizeObserver(() => {
+            updateSlider();
+        });
+
+        if (selectedButtonElement.current) {
+            observer.observe(selectedButtonElement.current);
+        }
+
+        const parent = selectedButtonElement.current?.parentElement;
+        if (parent) {
+            observer.observe(parent);
+        }
+
+        return () => observer.disconnect();
     }, [selectedIndex]);
 
     return <div className="relative">
@@ -30,6 +49,7 @@ const SlidingNavbar = ({
         <ul className="flex border-b-1 border-border">
             {buttons.map((button, index) => {
                 return <li ref={index === selectedIndex ? selectedButtonElement : null}
+                key={index}
                 className="transition-all">
                     <button onClick={button.onSelect} 
                     className={`cursor-pointer py-4 px-6 transition-all ${index === selectedIndex ? "text-text" : "text-muted"}`}>

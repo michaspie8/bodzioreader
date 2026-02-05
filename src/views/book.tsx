@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import PageVisualiser from "../components/pageVisualiser/pageVisualiser.tsx";
 import PageReader from "../components/pageReader/pageReader.tsx";
 import { IBook, importBookFromFile } from "../utils/bookImporter/bookImporter.ts";
+import { useParams } from "react-router";
+import { getEntry } from "../db/db.ts";
 const defaultWpm = 400;
 
 
@@ -19,7 +21,18 @@ export default function Book() {
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
 
-  
+  const { id } = useParams<{id: string}>();
+
+  useEffect(() => {
+    if (id) {
+      const entry = getEntry(id);
+      if (entry) {
+        
+        // TUTAJ USTAWIA SIE KSIAZKA
+
+      }
+    }
+  }, [id]);
 
   const pages = useMemo(() => book?.pages || [], [book]);
 
@@ -92,7 +105,6 @@ export default function Book() {
     setIsPlaying(false);
     try {
       const importedBook = await importBookFromFile(file);
-      console.log(importedBook)
       setBook(importedBook);
       setStartPage(1);
       setPageIdx(0);

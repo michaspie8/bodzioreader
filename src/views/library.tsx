@@ -1,9 +1,10 @@
 import { useState } from "react";
 import BookElement from "../components/bookElement/bookElement";
 import Dialog from "../components/dialog/dialog";
-import { Book, getBaseData } from "../db/db"
+import { getBaseData } from "../db/db"
 import { exampleBooks } from "../utils/exampleData";
 import CreateBookForm from "../components/createBookForm/createBookForm";
+import { IBook } from "../utils/bookImporter/bookImporter";
 
 
 export default function Library() {
@@ -20,13 +21,17 @@ export default function Library() {
         setShowDialog(false);
     }
 
+    const onNewBook = (newBook: IBook) => {
+        setShowDialog(false);
+    }
+
 
 
 
     return <main>
         <Dialog title="Library" align="text-left" visible={showDialog}
         onClose={onNewBookCancel}>
-            <CreateBookForm />
+            <CreateBookForm onCancel={onNewBookCancel} key={Number(showDialog)} onNewBook={onNewBook} />
         </Dialog>
         <ul className="flex gap-4 flex-wrap">
             {books.map(book => (

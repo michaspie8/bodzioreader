@@ -2,6 +2,7 @@ import * as pdfUtils from "../pdfExtractor";
 import * as epubUtils from "../ePubExtractor";
 
 export interface IBook {
+  id: string;
   title: string;
   author: string;
   pages: {
@@ -9,6 +10,7 @@ export interface IBook {
   }[];
   isbn?: string;
   coverImageURL?: string;
+  lastEdited: Date;
 };
 
 async function tryFindCoverImage(
@@ -59,9 +61,7 @@ export const importPDF = async (file: File): Promise<IBook> => {
       const title = file.name.replace(/\.[^/.]+$/, ""); // filename without extension
       const author = "unknown";
       const pages = (await extractor).pages.map((p) => ({words: p}));
-    const book: IBook = {title, author, pages};
-
-console.log(book);
+    const book: IBook = {id: Date.now().toString(), title, author, pages, lastEdited: new Date()};
 
       book.coverImageURL = await tryFindCoverImage(book.isbn, book.title);
       resolve(book);
@@ -79,7 +79,7 @@ export const importEPUB = async (file: File): Promise<IBook> => {
       const extractor = epubUtils.extractEpubPages(await file.arrayBuffer());
       
       const { title, author, isbn, pages } = await extractor;
-      const book: IBook = {title, author, pages: pages.map(p => ({words: p})), isbn};
+      const book: IBook = {id: Date.now().toString(), title, author, pages: pages.map(p => ({words: p})), isbn, lastEdited: new Date()};
       book.coverImageURL = await tryFindCoverImage(book.isbn, book.title);
       resolve(book);
     } catch (error) {
@@ -98,4 +98,17 @@ const importBookFromFile = async (file: File): Promise<IBook> => {
     }
 }
 
-export { importBookFromFile };
+const getNewEmptyBook = (): IBook => {
+  const newBook = {
+      id: Date.now().toString(),
+      title: "New book " 
+        + new Date().toLocaleString().split(",")[0],
+      author: "unknown",
+      pages: [],
+      lastEdited: new Date()
+  };
+  return newBook;
+}
+
+
+export { importBookFromFile, getNewEmptyBook };

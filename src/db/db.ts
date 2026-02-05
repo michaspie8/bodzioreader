@@ -1,44 +1,35 @@
+import { IBook } from "../utils/bookImporter/bookImporter";
 import { exampleBooks } from "../utils/exampleData";
 
 const WORDS_KEY = 'bodzioreader_words';
 
-export interface Book{
-    id: number;
-    title: string;
-    lastEdited: Date;
-    pages: {
-        words: string[];
-    }[];
-}
-
 export interface BaseBookData{
-    id: number;
+    id: string;
     title: string;
     lastEdited: Date;
     pageCount: number;
     wordCount: number;
 }
 
-export const saveEntries = (entries: Book[]): void => {
+export const saveEntries = (entries: IBook[]): void => {
   localStorage.setItem(WORDS_KEY, JSON.stringify(entries));
 };
 
-export const getEntries = (): Book[] | null => {
+export const getEntries = (): IBook[] | null => {
   
 
-//   const entries = localStorage.getItem(WORDS_KEY);
-//     if (!entries) {
-//         return null;
-//     }
+  const entries = localStorage.getItem(WORDS_KEY);
+    if (!entries) {
+        return null;
+    }
 
-//     const parsed = JSON.parse(entries) as Entry[];
+    const parsed = JSON.parse(entries) as IBook[];
 
-//     parsed.forEach((entry: any) => {
-//         entry.lastEdited = new Date(entry.lastEdited);
-//     });
+    parsed.forEach((entry: any) => {
+        entry.lastEdited = new Date(entry.lastEdited);
+    });
 
-//     return parsed;
-    return exampleBooks;
+    return parsed;
 };
 
 export const getBaseData = (): BaseBookData[] | null => {
@@ -56,7 +47,7 @@ export const getBaseData = (): BaseBookData[] | null => {
     }));
 }
 
-export const getEntry = (id: number): Book | null => {
+export const getEntry = (id: string): IBook | null => {
     const entries = getEntries();
     if (!entries) {
         return null;
@@ -66,7 +57,7 @@ export const getEntry = (id: number): Book | null => {
     return entry || null;
 }
 
-export const saveEntry = (entry: Book): void => {
+export const saveEntry = (entry: IBook): void => {
     const entries = getEntries() || [];
     const existingIndex = entries.findIndex(e => e.id === entry.id);
     if (existingIndex !== -1) {

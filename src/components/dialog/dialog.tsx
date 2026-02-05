@@ -30,7 +30,7 @@ const Dialog = ({
             <span className="font-bold text-xl">
                 {title}
                 </span>
-                <button onClick={() => onClose && onClose()}>
+                <button onClick={() => onClose && onClose()} className="cursor-pointer">
                     <Icon icon="material-symbols:close-rounded" height={20}></Icon>
                 </button>
             

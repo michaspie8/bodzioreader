@@ -25,7 +25,6 @@ export async function extractEpubPages(buffer: ArrayBuffer) {
         //content is HTMLElement object
         const html = content as HTMLElement;
 
-        console.log(html);
     [".annotation",".annotations","head", "script","aside", "style", "nav", "footer", "header", "sup", "title", "h1", "h2", "h3", "h4", "h5", "h6"].forEach(tag => {
         html.querySelectorAll(tag).forEach(el => el.remove());
     });
