@@ -4,10 +4,13 @@ import { Icon } from "@iconify/react";
 import { getNewEmptyBook, IBook, importBookFromFile } from "../../utils/bookImporter/bookImporter";
 import { saveEntry } from "../../db/db";
 import { useNavigate } from "react-router";
+import FileCatcher from "../fileCatcher/fileCatcher";
 
 const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBook?: (book: IBook) => void}) => {
 
     const navigate = useNavigate();
+
+    const [error, setError] = useState<string | null>(null);
 
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -22,13 +25,28 @@ const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBoo
         fileInputRef.current?.click();
     }
 
+    useEffect(() => {
+        if (selectedIndex === 1) {
+            setError(null);
+            setSelectedFile(null);
+        }
+    }, [selectedIndex]);
+
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         let newBook: IBook;
 
         if (selectedFile) {
-            newBook = await importBookFromFile(selectedFile);
+            try {
+                newBook = await importBookFromFile(selectedFile);
+            } catch (error) {
+
+                setError(error instanceof Error ? error.message : String(error));
+
+                return;
+            }
+            
             saveEntry(newBook);
         
         } else {
@@ -60,21 +78,31 @@ const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBoo
     } 
     selectedIndex={selectedIndex}
     />
+    <FileCatcher active={selectedIndex === 0} onFileDrop={(file) => setSelectedFile(file)}/>
     <form onSubmit={onSubmit}>
         {
             (() => {
                 switch(selectedIndex) {
                 case 0:
 
-                    return <div className="h-48 flex flex-col justify-center items-center text-muted cursor-pointer"
+                    return <div className="h-48 flex flex-col justify-center items-center text-muted cursor-pointer px-6"
                     onClick={handleDragFileContainerClick}>
                         {
                             selectedFile === null ?<> 
                             <Icon icon="material-symbols:upload-rounded" height={96}></Icon>
-                            <span>Drag file to upload</span> 
-                            </> : <span>
+                            <span>Click or drag file to upload</span> 
+                            </> :<>
+                            <span>
+                                
                             {selectedFile.name} will be imported
                             </span>
+                            {
+                                error && <span className="text-accent">
+                                    {error}
+                                </span>
+                            }
+                            </>
+                            
                         }
                     </div>
                 case 1:

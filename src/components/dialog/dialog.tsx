@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { ReactNode } from "react"
+import { ReactNode, useEffect } from "react"
 
 const Dialog = ({
     children, 
@@ -16,10 +16,22 @@ const Dialog = ({
 }) => {
 
 
+    useEffect(() => {
+        if (visible) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        // Cleanup: przywróć scroll po odmontowaniu komponentu
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [visible]);
 
 
-
-    return <div className="bg-panel w-fit  border-border border-1 rounded-lg min-w-96" style={{ display: visible ? "block" : "none" }}>
+    return <div className={`w-full h-full inset-0 fixed flex justify-center items-center bg-black/50 z-50 ${visible ? "block" : "hidden"}`}>
+        <div className={"bg-panel w-fit  border-border border-1 rounded-lg min-w-96"}>
         <header className={`${align} p-4 flex items-center justify-between border-b-1 border-border`}>
             {
                 align === "text-center" ? <span className="invisible">
@@ -39,6 +51,7 @@ const Dialog = ({
             {children}
         </div>
     </div>
+</div>
 }
 
 export default Dialog;
