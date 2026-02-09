@@ -48,6 +48,7 @@ const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBoo
             }
             
             saveEntry(newBook);
+            setError(null);
         
         } else {
             newBook = getNewEmptyBook();

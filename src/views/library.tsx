@@ -5,6 +5,7 @@ import { getBaseData } from "../db/db"
 import { exampleBooks } from "../utils/exampleData";
 import CreateBookForm from "../components/createBookForm/createBookForm";
 import { IBook } from "../utils/bookImporter/bookImporter";
+import { useNavigate } from "react-router";
 
 
 export default function Library() {
@@ -25,6 +26,11 @@ export default function Library() {
         setShowDialog(false);
     }
 
+    const navigate = useNavigate();
+    const onBookClick = (id: string) => {
+        navigate(`/book/${id}`);
+    }
+
 
 
 
@@ -36,7 +42,7 @@ export default function Library() {
         <ul className="flex gap-4 flex-wrap">
             {books.map(book => (
             <li key={book.id}>
-                <BookElement book={book} />
+                <BookElement book={book} onClick={() => onBookClick(book.id)} />
             </li>
         ))}
         <li><BookElement book={undefined} onClick={onNewBookClick} /></li>

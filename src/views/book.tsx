@@ -28,9 +28,11 @@ export default function Book() {
       const entry = getEntry(id);
       if (entry) {
         
-        // TUTAJ USTAWIA SIE KSIAZKA
+        setBook(entry);
 
       }
+    } else {
+
     }
   }, [id]);
 
