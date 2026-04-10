@@ -32,7 +32,12 @@ const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBoo
         }
     }, [selectedIndex]);
 
+    const [isImporting, setIsImporting] = useState(false);
+
     const onSubmit = async (e: React.FormEvent) => {
+
+        setIsImporting(true);
+
         e.preventDefault();
 
         let newBook: IBook;
@@ -57,7 +62,11 @@ const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBoo
 
         onNewBook && onNewBook(newBook);
 
+        
+
         navigate(`/book/${newBook.id}`);
+
+        setIsImporting(false);
     }
 
     return <>
@@ -126,7 +135,7 @@ const CreateBookForm = ({onCancel, onNewBook} : {onCancel?: () => void, onNewBoo
 
         <div className="p-4 flex gap-4 flex-row-reverse border-t-1 border-border">
             <button type="submit" className="btn primary text-background px-4 py-2 rounded-lg"
-            disabled={!allowSubmit()}
+            disabled={!allowSubmit() || isImporting}
             >Create Book</button>
             <button type="button" className="btn ghost text-background px-4 py-2 rounded-lg" onClick={onCancel}>Cancel</button>
         </div>

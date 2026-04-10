@@ -35,7 +35,7 @@ export default function Library() {
 
 
     return <main>
-        <Dialog title="Library" align="text-left" visible={showDialog}
+        <Dialog title="Adding new book" align="text-left" visible={showDialog}
         onClose={onNewBookCancel}>
             <CreateBookForm onCancel={onNewBookCancel} key={Number(showDialog)} onNewBook={onNewBook} />
         </Dialog>

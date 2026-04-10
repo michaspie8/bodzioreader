@@ -104,7 +104,7 @@ const getNewEmptyBook = (): IBook => {
       title: "New book " 
         + new Date().toLocaleString().split(",")[0],
       author: "unknown",
-      pages: [],
+      pages: [{words: []}],
       lastEdited: new Date()
   };
   return newBook;

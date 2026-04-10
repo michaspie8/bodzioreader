@@ -1,7 +1,7 @@
 import { Icon } from '@iconify/react';
 import { useEffect, useState } from 'react';
 
-const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChangePage: onPageChange, onChangeMode: onModeChange, onAddPage, onEditPage, onDeletePage, onSaveChanges }: {
+const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChangePage: onPageChange, onChangeMode: onModeChange, onAddPage, onDeletePage = (pageIdx) => {}, onSaveChanges }: {
   words: string[] | undefined,
   pageCount: number,
   page: number,
@@ -10,8 +10,7 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
   onChangePage?: (newPage: number) => void,
   onChangeMode?: (newMode: 'preview' | 'edit') => void,
   onAddPage?: () => void,
-  onEditPage?: () => void,
-  onDeletePage?: () => void,
+  onDeletePage?: (pageIdx: number) => void,
   onSaveChanges?: (newWords: string[]) => void,
 }) => {
   
@@ -27,7 +26,7 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
   }, [mode, words]);
 
     useEffect(() => {
-    setPageInputValue(page.toString());
+    setPageInputValue((page + 1).toString());
   }, [page]);
 
   return <div className="p-4 rounded-lg w-full gap-4 flex flex-col border-1 border-border bg-panel">
@@ -40,23 +39,20 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
             <input 
               type="number" 
               className="text-input rounded-md text-center w-fit py-1 no-spinbox" 
-              value={String(Number(pageInputValue) + 1)}
+              value={pageInputValue}
               min={1} 
               max={pageCount} 
               onChange={(e) => {
-                const val = e.target.value;
-                setPageInputValue(String(+val - 1));
+                setPageInputValue(e.target.value);
               }} 
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  const num = Number(pageInputValue) + 1;
+                  const num = Number(pageInputValue);
                   if (!isNaN(num) && num >= 1 && num <= pageCount) {
                     onPageChange?.(num);
-                    // Opcjonalnie usuń focus z inputa po kliknięciu Enter
                     (e.target as HTMLInputElement).blur();
                   } else {
-                    // Reset do poprawnej strony w przypadku błędnej wartości
-                    setPageInputValue(page.toString());
+                    setPageInputValue((page + 1).toString());
                   }
                 }
               }}
@@ -64,28 +60,32 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
             &nbsp;&nbsp; of {pageCount}
           </div>
           <div className='flex items-center gap-2'>
-
-            <button onClick={page > 1 && onPageChange ? () => onPageChange(page - 1) : undefined}
-              disabled={page == 1}>
-              <Icon icon="mdi:arrow-left" height={24} className={page == 1 ? 'text-border-light' : ''}></Icon>
+            <button 
+              onClick={() => onPageChange?.(page)}
+              disabled={page <= 0}
+            >
+              <Icon icon="mdi:arrow-left" height={24} className={page <= 0 ? 'text-border-light opacity-50' : ''}></Icon>
             </button>
-            <button className="rotate-180" onClick={page < pageCount && onPageChange ? () => onPageChange(page + 1) : undefined}
-              disabled={page == pageCount}>
-              <Icon icon="mdi:arrow-left" height={24} className={page >= pageCount ? 'text-border-light' : ''}></Icon>
+            <button 
+              className="rotate-180" 
+              onClick={() => onPageChange?.(page + 2)}
+              disabled={page >= pageCount - 1}
+            >
+              <Icon icon="mdi:arrow-left" height={24} className={page >= pageCount - 1 ? 'text-border-light opacity-50' : ''}></Icon>
             </button>
             <button onClick={onAddPage}>
               <Icon icon="mdi:plus" height={32}></Icon>
             </button>
-            <button onClick={onEditPage}>
+            <button onClick={onModeChange ? () => onModeChange('edit') : undefined}>
               <Icon icon="mdi:square-edit-outline" height={24}></Icon>
             </button>
-            <button onClick={onDeletePage}>
+            <button onClick={() => onDeletePage(page)}>
               <Icon icon="mdi:trash-can-outline" height={24}></Icon>
             </button>
           </div>
 
         </div> : <div className='text-muted text-sm'>
-          Page {page} of {pageCount}
+          Page {page + 1} of {pageCount}
         </div>
       }
 

@@ -13,15 +13,8 @@ export const useReadingEngine = (book: IBook | null) => {
 
     const pages = useMemo(() => book?.pages || [], [book]);
 
-      
-
-        const safeStart = useMemo(
-            () => (pages.length ? Math.min(Math.max(startPage, 1), pages.length) : 1),
-            [pages.length, startPage],
-        );
-
-        const currentPageWords = pages[pageIdx]?.words || [];
-        const currentWord = currentPageWords[wordIdx] || "";
+  const currentPageWords = pages[pageIdx]?.words || [];
+  const currentWord = currentPageWords[wordIdx] || "";
 
          const numberOfWordsInPages = useMemo(() => {
     return pages.map(page => page.words.length);
@@ -60,22 +53,10 @@ export const useReadingEngine = (book: IBook | null) => {
     return () => clearInterval(timer);
   }, [isPlaying, wpm, pages, pageIdx]);
 
-  useEffect(() => {
-    if (!pages.length) {
-      setPageIdx(0);
-      setWordIdx(0);
-      setIsPlaying(false);
-      return;
-    }
-    const nextPageIdx = safeStart - 1;
-    setPageIdx(nextPageIdx);
-    setWordIdx(0);
-    setIsPlaying(false);
-  }, [safeStart, pages]);
-
-  const handleStartPageChange = (value: number) => {
-    if (!pages.length) return;
-    const next = Math.min(Math.max(value, 1), pages.length);
+  const handleStartPageChange = (value: number, totalPages?: number) => {
+    const count = totalPages || pages.length;
+    if (!count) return;
+    const next = Math.min(Math.max(value, 1), count);
     setStartPage(next);
     setPageIdx(next - 1);
     setWordIdx(0);
