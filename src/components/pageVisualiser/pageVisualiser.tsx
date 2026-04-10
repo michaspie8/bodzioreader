@@ -17,14 +17,18 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
   
 
   const [inputWords, setInputWords] = useState<string>("");
+  const [pageInputValue, setPageInputValue] = useState<string>((page + 1).toString()); // Nowy stan dla inputa strony
+
 
   useEffect(() => {
-
     if (mode === 'edit' && words) {
       setInputWords(words.join(' '));
     }
-
   }, [mode, words]);
+
+    useEffect(() => {
+    setPageInputValue(page.toString());
+  }, [page]);
 
   return <div className="p-4 rounded-lg w-full gap-4 flex flex-col border-1 border-border bg-panel">
     <header className="flex justify-between">
@@ -35,8 +39,27 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
             Page:&nbsp;&nbsp;
             <input 
               type="number" 
-              className="text-input rounded-md text-center w-fit py-1 no-spinbox" defaultValue={page} min={1} max={pageCount} 
-              onChange={(e) => onPageChange && !isNaN(Number(e.target.value)) && Number(e.target.value) >= 1 && Number(e.target.value) <= pageCount ? onPageChange(Number(e.target.value)) : undefined} 
+              className="text-input rounded-md text-center w-fit py-1 no-spinbox" 
+              value={String(Number(pageInputValue) + 1)}
+              min={1} 
+              max={pageCount} 
+              onChange={(e) => {
+                const val = e.target.value;
+                setPageInputValue(String(+val - 1));
+              }} 
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const num = Number(pageInputValue) + 1;
+                  if (!isNaN(num) && num >= 1 && num <= pageCount) {
+                    onPageChange?.(num);
+                    // Opcjonalnie usuń focus z inputa po kliknięciu Enter
+                    (e.target as HTMLInputElement).blur();
+                  } else {
+                    // Reset do poprawnej strony w przypadku błędnej wartości
+                    setPageInputValue(page.toString());
+                  }
+                }
+              }}
             />
             &nbsp;&nbsp; of {pageCount}
           </div>

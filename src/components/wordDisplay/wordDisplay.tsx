@@ -18,7 +18,7 @@ function highlightWord(word: string) {
     );
 }
 
-const PageReader = ({
+const WordDisplay = ({
     currentWord = "",
     wordsLength = 0,
     currentIndex = 0
@@ -39,4 +39,4 @@ const PageReader = ({
     );
 }
 
-export default PageReader;
+export default WordDisplay;
