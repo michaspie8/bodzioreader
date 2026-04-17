@@ -36,7 +36,7 @@ export default function Book() {
         <ReadingPanel 
         isEditing={editing}
         title={book?.title || "No title"}
-          allowRead={!!pages.length && !editing}
+          allowRead={!!pages.length && !editing && editingPage === null}
           word={currentWord}
           wordIdx={wordIdx}
           maxPage={pages.length}
@@ -96,6 +96,7 @@ export default function Book() {
             refetch();
             setWordIdx(0);
           }}
+          allowDeletePage={pages.length > 1}
             pageCount={pages.length}
             words={currentPageWords}
             highlightIndex={wordIdx}

@@ -1,7 +1,8 @@
 import { Icon } from '@iconify/react';
 import { useEffect, useState } from 'react';
 
-const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChangePage: onPageChange, onChangeMode: onModeChange, onAddPage, onDeletePage = (pageIdx) => {}, onSaveChanges }: {
+const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChangePage: onPageChange, onChangeMode: onModeChange, onAddPage, onDeletePage = (pageIdx) => {}, onSaveChanges, allowDeletePage = true }: {
+  allowDeletePage?: boolean,
   words: string[] | undefined,
   pageCount: number,
   page: number,
@@ -79,7 +80,7 @@ const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChange
             <button onClick={onModeChange ? () => onModeChange('edit') : undefined}>
               <Icon icon="mdi:square-edit-outline" height={24}></Icon>
             </button>
-            <button onClick={() => onDeletePage(page)}>
+            <button onClick={() => onDeletePage(page)} disabled={!allowDeletePage}>
               <Icon icon="mdi:trash-can-outline" height={24}></Icon>
             </button>
           </div>
