@@ -12,7 +12,7 @@ const BookElement = ({book, onClick}: {book?: BaseBookData, onClick?: () => void
             book ? 
             <>
                 <h3>{book.title}</h3>
-                {book.coverImage && book.coverImage !== "/default-book-cover.webp" && (
+                {book.showCover && book.coverImage && book.coverImage !== "/default-book-cover.webp" && (
                     <img src={book.coverImage} alt={book.title} className=" w-full object-cover rounded-md"/>
                 )}
                 <span className="text-muted text-sm">{book.pageCount} pages</span>

@@ -10,6 +10,7 @@ export interface BaseBookData{
     pageCount: number;
     wordCount: number;
     coverImage?: string;
+    showCover: boolean;
 }
 
 export const saveEntries = (entries: IBook[]): void => {
@@ -46,6 +47,7 @@ export const getBaseData = (): BaseBookData[] | null => {
         pageCount: entry.pages.length,
         wordCount: entry.pages.reduce((acc, page) => acc + page.words.length, 0),
         coverImage: entry.coverImageURL,
+        showCover: entry.showCover
     }));
 }
 

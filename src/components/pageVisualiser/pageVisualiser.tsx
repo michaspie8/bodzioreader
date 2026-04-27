@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 const PageVisualiser = ({ words, pageCount, page, highlightIndex, mode, onChangePage: onPageChange, onChangeMode: onModeChange, onAddPage, onDeletePage = (pageIdx) => {}, onSaveChanges, allowDeletePage = true }: {
   allowDeletePage?: boolean,
+  allowEditPage?: boolean,
   words: string[] | undefined,
   pageCount: number,
   page: number,

@@ -11,6 +11,7 @@ export interface IBook {
   isbn?: string;
   coverImageURL?: string;
   lastEdited: Date;
+  showCover: boolean;
 };
 
 async function tryFindCoverImage(
@@ -77,7 +78,7 @@ export const importPDF = async (file: File): Promise<IBook> => {
       const title = file.name.replace(/\.[^/.]+$/, ""); // filename without extension
       const author = "unknown";
       const pages = (await extractor).pages.map((p) => ({words: p}));
-    const book: IBook = {id: Date.now().toString(), title, author, pages, lastEdited: new Date()};
+    const book: IBook = {id: Date.now().toString(), title, author, pages, lastEdited: new Date(), showCover: true};
 
       book.coverImageURL = await tryFindCoverImage(book.isbn, book.title);
       resolve(book);
@@ -95,7 +96,7 @@ export const importEPUB = async (file: File): Promise<IBook> => {
       const extractor = epubUtils.extractEpubPages(await file.arrayBuffer());
       
       const { title, author, isbn, pages } = await extractor;
-      const book: IBook = {id: Date.now().toString(), title, author, pages: pages.map(p => ({words: p})), isbn, lastEdited: new Date()};
+      const book: IBook = {id: Date.now().toString(), title, author, pages: pages.map(p => ({words: p})), isbn, lastEdited: new Date(), showCover: true};
       book.coverImageURL = await tryFindCoverImage(book.isbn, book.title);
       resolve(book);
     } catch (error) {
@@ -121,6 +122,7 @@ const getNewEmptyBook = (): IBook => {
         + new Date().toLocaleString().split(",")[0],
       author: "unknown",
       pages: [{words: []}],
+      showCover: true,
       lastEdited: new Date()
   };
   return newBook;
