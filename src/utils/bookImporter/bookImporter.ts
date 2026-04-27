@@ -20,7 +20,20 @@ async function tryFindCoverImage(
     //openlibrary cover api https://openlibrary.org/dev/docs/api/search
 
   if (isbn) {
-    return `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+    const url = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+    //try to fetch the image to check if it is not 1x1px placeholder
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size > 1000) {
+          return url;
+        }
+      }
+    } catch {
+      console.log("Error fetching cover image from OpenLibrary");
+      console.log(isbn);
+    }
   }
 
   if (title) {
@@ -31,6 +44,7 @@ async function tryFindCoverImage(
         .replace(/\s+/g, " ")
         .trim()
         .replace(/ /g, "+");
+        console.log(`Searching for cover image with title: ${cleantitle}`);
       const response = await fetch(
         `https://openlibrary.org/search.json?q=${encodeURIComponent(cleantitle)}`,
       );
@@ -45,6 +59,8 @@ async function tryFindCoverImage(
       console.log("Error fetching cover image from OpenLibrary");
       console.log(title);
     }
+  }else{
+    console.log("No ISBN or title provided for cover image search");
   }
 
   return "/default-book-cover.webp";
