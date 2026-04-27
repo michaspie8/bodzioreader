@@ -12,9 +12,12 @@ const BookElement = ({book, onClick}: {book?: BaseBookData, onClick?: () => void
             book ? 
             <>
                 <h3>{book.title}</h3>
-            <span className="text-muted text-sm">{book.pageCount} pages</span>
-            <span className="text-muted text-sm">{book.wordCount} words</span>
-            <span className="text-muted text-sm">Last edited {book.lastEdited.toLocaleDateString()}</span>
+                {book.coverImage && book.coverImage !== "/default-book-cover.webp" && (
+                    <img src={book.coverImage} alt={book.title} className=" w-full object-cover rounded-md"/>
+                )}
+                <span className="text-muted text-sm">{book.pageCount} pages</span>
+                <span className="text-muted text-sm">{book.wordCount} words</span>
+                <span className="text-muted text-sm">Last edited {book.lastEdited.toLocaleDateString()}</span>
             </>
             : <h3 className="text-muted flex">Add new book<Icon icon="mdi:plus" height={24}></Icon></h3>
         }

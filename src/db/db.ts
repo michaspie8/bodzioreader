@@ -9,6 +9,7 @@ export interface BaseBookData{
     lastEdited: Date;
     pageCount: number;
     wordCount: number;
+    coverImage?: string;
 }
 
 export const saveEntries = (entries: IBook[]): void => {
@@ -44,6 +45,7 @@ export const getBaseData = (): BaseBookData[] | null => {
         lastEdited: entry.lastEdited,
         pageCount: entry.pages.length,
         wordCount: entry.pages.reduce((acc, page) => acc + page.words.length, 0),
+        coverImage: entry.coverImageURL,
     }));
 }
 
@@ -66,4 +68,10 @@ export const saveEntry = (entry: IBook): void => {
         entries.push(entry);
     }
     saveEntries(entries);
+}
+
+export const deleteEntry = (id: string): void => {
+    const entries = getEntries() || [];
+    const newEntries = entries.filter(e => e.id !== id);
+    saveEntries(newEntries);
 }
